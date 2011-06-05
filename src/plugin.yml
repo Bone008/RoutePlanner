@@ -1,0 +1,9 @@
+name: RoutePlanner
+main: bone008.routeplanner.RoutePlanner
+version: 1.0
+commands:
+    route:
+        usage: |
+            RoutePlanner version <version>
+            Type /<command> help for more information!
+        aliases: rp
