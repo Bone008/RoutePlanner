@@ -4,6 +4,6 @@ version: 1.0
 commands:
     route:
         usage: |
-            RoutePlanner version <version>
+            RoutePlanner version 1.0
             Type /<command> help for more information!
         aliases: rp
