@@ -5,7 +5,7 @@ author: Bone008
 
 commands:
     route:
-        usage: |
+        usage:
             RoutePlanner version 1.1 by Bone008
             Type /<command> help for more information!
         aliases: rp
