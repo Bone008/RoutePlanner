@@ -130,11 +130,11 @@ public class CreatingSession {
 	
 	public void dump(Player player){
 		player.sendMessage(ChatColor.GRAY+"route name: "+ChatColor.WHITE+routeName);
-		player.sendMessage(ChatColor.GRAY+"intro message: "+ChatColor.WHITE+introMessage);
+		player.sendMessage(ChatColor.GRAY+"intro message: "+ChatColor.WHITE+RoutePlanner.colorize(introMessage));
 		player.sendMessage(ChatColor.GRAY+"trigger regions:");
 		for(int i=0; i<triggerRegions.size(); i++){
 			TriggerRegion currReg = triggerRegions.get(i);
-			player.sendMessage(ChatColor.GRAY+" #"+i+": "+ChatColor.WHITE+currReg.getTriggerMessage()+ (currReg == targetTrigger ? ChatColor.GREEN+" [target]" : ""));
+			player.sendMessage(ChatColor.GRAY+"  #"+i+": "+ChatColor.WHITE+currReg.getTriggerMessage()+ (currReg == targetTrigger ? ChatColor.GREEN+" [target]" : ""));
 		}
 	}
 

@@ -25,7 +25,12 @@ class POutput {
 	public static void print(Player player, String msg){
 		String[] multiline = new String[1];
 		multiline[0] = msg;
-		print(player, multiline);
+		print(player, multiline, true);
+	}
+	public static void print(Player player, String msg, boolean usePrefix){
+		String[] multiline = new String[1];
+		multiline[0] = msg;
+		print(player, multiline, usePrefix);
 	}
 	public static void print(Player player, String[] msg){
 		print(player, msg, true);

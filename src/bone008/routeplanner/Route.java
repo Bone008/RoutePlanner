@@ -92,7 +92,7 @@ public class Route {
 	}
 
 	public String getIntroMessage() {
-		return introMessage;
+		return RoutePlanner.colorize(introMessage);
 	}
 
 	public void setCreator(String creator) {

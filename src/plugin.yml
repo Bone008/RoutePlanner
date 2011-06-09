@@ -1,9 +1,11 @@
 name: RoutePlanner
 main: bone008.routeplanner.RoutePlanner
-version: 1.0
+version: 1.1
+author: Bone008
+
 commands:
     route:
         usage: |
-            RoutePlanner version 1.0
+            RoutePlanner version 1.1 by Bone008
             Type /<command> help for more information!
         aliases: rp

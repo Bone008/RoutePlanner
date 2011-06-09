@@ -20,7 +20,7 @@ public class RoutingSession {
 		this.route = route;
 		this.player = player;
 		if(!plugin.config.msg_followRoute.trim().equalsIgnoreCase("none")){
-			String printStr = plugin.config.msg_followRoute.replace("<routename>", ChatColor.GREEN+route.getName()+ChatColor.WHITE);
+			String printStr = RoutePlanner.colorize(plugin.config.msg_followRoute.replace("<routename>", ChatColor.GREEN+route.getName()+ChatColor.WHITE));
 			POutput.print(player, printStr);
 		}
 		POutput.print(player, route.getIntroMessage());
@@ -42,7 +42,7 @@ public class RoutingSession {
 	
 	private void targetReached(){
 		if(!plugin.config.msg_finishRoute.trim().equalsIgnoreCase("none"))
-			POutput.print(player, plugin.config.msg_finishRoute);
+			POutput.print(player, RoutePlanner.colorize(plugin.config.msg_finishRoute));
 		plugin.routingSessions.remove(player);
 	}
 }

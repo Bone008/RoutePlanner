@@ -3,10 +3,13 @@ package bone008.routeplanner;
 
 
 import org.bukkit.ChatColor;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import com.sk89q.worldedit.bukkit.selections.Selection;
 
 public class RoutePlannerCommand implements CommandExecutor{
 	private final RoutePlanner plugin;
@@ -99,9 +102,9 @@ public class RoutePlannerCommand implements CommandExecutor{
 				return true;
 			}
 			
-			Route route = plugin.routes.get(split[0].toLowerCase());
+			Route route = plugin.getRoute(split[0]);
 			if(route == null || !route.isValid()){
-				POutput.printError(player,"The route \""+split[0]+"\" was not found!");
+				POutput.printError(player, RoutePlanner.ERROR_NOT_EXISTS);
 				return true;
 			}
 			
@@ -112,6 +115,12 @@ public class RoutePlannerCommand implements CommandExecutor{
 		return true;
 	}
 
+	
+	
+	
+
+	// ============== User commands ========================== 
+	
 	
 	
 	private void displayHelp(Player player){
@@ -150,8 +159,6 @@ public class RoutePlannerCommand implements CommandExecutor{
 	
 	
 	
-	// ============== User commands ========================== 
-	
 	private boolean rCancel(Player player) {
 		if(plugin.routingSessions.remove(player) == null)
 			POutput.printError(player, RoutePlanner.ERROR_NOT_RUNNING);
@@ -163,14 +170,15 @@ public class RoutePlannerCommand implements CommandExecutor{
 	
 	private boolean rList(Player player){
 		StringBuilder names = new StringBuilder();
+		String splitter = ", ";
 		for(Route r: plugin.routes.values()){
-			names.append(",").append(r.getName());
+			names.append(splitter).append(r.getName());
 		}
 		POutput.print(player, "Available routes:");
 		if(plugin.routes.size() > 0)
-			POutput.print(player, names.substring(1));
+			POutput.print(player, "  "+names.substring(splitter.length()), false);
 		else
-			POutput.print(player, ChatColor.RED+"none");
+			POutput.print(player, "  "+ChatColor.RED+"none", false);
 		return true;
 	}
 	
@@ -194,7 +202,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 			return true;
 		}
 		
-		Route route2edit = plugin.routes.get(routename.toLowerCase());
+		Route route2edit = plugin.getRoute(routename);
 		// check if route exists
 		if(route2edit == null){
 			POutput.printError(player, RoutePlanner.ERROR_NOT_EXISTS);
@@ -251,7 +259,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 		// get routename
 		String routename = split[1];
 		
-		Route route2remove = plugin.routes.get(routename.toLowerCase());
+		Route route2remove = plugin.getRoute(routename);
 		// check if route exists
 		if(route2remove == null){
 			POutput.printError(player, RoutePlanner.ERROR_NOT_EXISTS);
@@ -335,13 +343,28 @@ public class RoutePlannerCommand implements CommandExecutor{
 			if(i+1 < split.length) triggerMsg.append(" ");
 		}
 		
-		if(session.selection[0] == null || session.selection[1] == null){
+		
+		// get the player selection (based on WorldEdit or native method)
+		Block sel_pos1 = null;
+		Block sel_pos2 = null;
+		if(plugin.worldEdit != null && plugin.config.useWorldEdit){
+			Selection weSel = plugin.worldEdit.getSelection(player);
+			if(weSel != null){
+				sel_pos1 = weSel.getWorld().getBlockAt(weSel.getMinimumPoint());
+				sel_pos2 = weSel.getWorld().getBlockAt(weSel.getMaximumPoint());
+			}
+		} else{
+			sel_pos1 = session.selection[0];
+			sel_pos2 = session.selection[1];
+		}
+		
+		if(sel_pos1 == null || sel_pos2 == null){
 			POutput.printError(player, RoutePlanner.ERROR_NO_SELECTION);
 			return true;
 		}
 		
 		try{
-			TriggerRegion newTrigger = new TriggerRegion(session.selection[0], session.selection[1], triggerMsg.toString());
+			TriggerRegion newTrigger = new TriggerRegion(sel_pos1, sel_pos2, triggerMsg.toString());
 			int triggerId = session.addTrigger(newTrigger);
 			session.resetSelection();
 			POutput.print(player, "The trigger was added with the ID #" + triggerId + "!");

@@ -2,11 +2,13 @@ package bone008.routeplanner;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
@@ -17,6 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 import com.nijiko.permissions.PermissionHandler;
 import com.nijikokun.bukkit.Permissions.Permissions;
+import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 
 public class RoutePlanner extends JavaPlugin{
 	static final Logger logger = Logger.getLogger("Minecraft");
@@ -27,12 +30,14 @@ public class RoutePlanner extends JavaPlugin{
 	
 	private File routesFile = new File("plugins/RoutePlanner/routes.yml");
 	private final RoutePlayerListener playerListener = new RoutePlayerListener(this);
+	private final RouteBlockListener blockListener = new RouteBlockListener(/*this*/);
 
 	// yml-configuration
 	RouteConfiguration config;
 
 	PluginDescriptionFile pdfFile;
 	PermissionHandler permissionHandler;
+	WorldEditPlugin worldEdit;
 	HashMap<Player,CreatingSession> creatingSessions = new HashMap<Player,CreatingSession>();
 	HashMap<Player,RoutingSession> routingSessions = new HashMap<Player,RoutingSession>();
 	HashMap<String,Route> routes = new HashMap<String,Route>();
@@ -65,10 +70,18 @@ public class RoutePlanner extends JavaPlugin{
 		loadRoutes();
 		
 		PluginManager pManager = getServer().getPluginManager();
-		pManager.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Normal, this);
-		pManager.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.High, this);
+		pManager.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Highest, this);
+		pManager.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
+		pManager.registerEvent(Event.Type.SIGN_CHANGE, blockListener, Priority.Normal, this);
 
 		getCommand("route").setExecutor(new RoutePlannerCommand(this));
+		
+		// hook into worldedit
+		Plugin worldEditPlugin = getServer().getPluginManager().getPlugin("WorldEdit");
+		if(worldEditPlugin != null && worldEditPlugin instanceof WorldEditPlugin){
+			this.worldEdit = (WorldEditPlugin) worldEditPlugin;
+			log("Successfully hooked into WorldEdit ...");
+		}
 		
 		String permVersion = setupPermissions();
 		
@@ -162,6 +175,45 @@ public class RoutePlanner extends JavaPlugin{
 	}
 	
 
+	
+	public Route getRoute(String name){
+		if(name == null) return null;
+		ArrayList<Route> exact = new ArrayList<Route>();
+		ArrayList<Route> results = new ArrayList<Route>();
+		for(Route r: this.routes.values()){
+			if(r.getName().equalsIgnoreCase(name))
+				exact.add(r);
+			else if(r.getName().toLowerCase().contains(name.toLowerCase()))
+				results.add(r);
+		}
+		
+		if(exact.size() == 1)
+			return exact.get(0);
+		if(results.size() == 1)
+			return results.get(0);
+		return null;
+	}
+	
+	
+	public static String colorize(String s){
+		if(s == null) return null;
+		return s.replaceAll("&([0-9a-f])", "\u00A7$1");
+	}
+	
+	
+	public static String getSignRouteName(Sign s){
+		return getSignRouteName(s.getLines());
+	}
+	public static String getSignRouteName(String[] lines){
+		if(lines == null || lines.length != 4)
+			throw new IllegalArgumentException("invalid lines parameter");
+		// only for first 3 lines!
+		for(int i=0; i<3; i++){
+			if(lines[i].trim().equals("RoutePlanner") && !lines[i+1].trim().isEmpty())
+				return lines[i+1].trim();
+		}
+		return null;
+	}
 	
 	
 

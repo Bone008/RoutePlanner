@@ -42,7 +42,7 @@ public class TriggerRegion {
 		this.triggerMessage = triggerMessage;
 	}
 	public String getTriggerMessage() {
-		return triggerMessage;
+		return RoutePlanner.colorize(triggerMessage);
 	}
 	
 	public BlockPosition getMin(){

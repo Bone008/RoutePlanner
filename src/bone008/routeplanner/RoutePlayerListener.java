@@ -4,11 +4,14 @@ package bone008.routeplanner;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerMoveEvent;
+
+
 
 public class RoutePlayerListener extends PlayerListener{
 	private final RoutePlanner plugin;
@@ -20,8 +23,26 @@ public class RoutePlayerListener extends PlayerListener{
 	
 	@Override
 	public void onPlayerInteract(PlayerInteractEvent event){
+		if(event.isCancelled()) return;
+		// check for signs
+		if(event.getAction() == Action.RIGHT_CLICK_BLOCK && event.getClickedBlock().getState() instanceof Sign){
+			Sign s = (Sign)event.getClickedBlock().getState();
+			String sRName = RoutePlanner.getSignRouteName(s);
+			if(sRName != null)
+				event.getPlayer().performCommand("route "+sRName);
+		}
+		
+		
+		// check for region selection
+		
+		// if use of WorldEdit's regions enabled -> return
+		if(plugin.worldEdit != null && plugin.config.useWorldEdit)
+			return;
+		
+		
 		if(event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_BLOCK){
 			Player player = event.getPlayer();
+			
 			
 			CreatingSession session;
 			if	(player.getItemInHand().getTypeId() == plugin.config.triggerSelectionItem &&
