@@ -1,0 +1,99 @@
+# ====== Settings for DeathControl ======
+# IMPORTANT: Do NOT use tabs in this file! Only use spaces!
+# 
+# Formatting works like that:
+#    {CAUSE}:
+#        keep-inventory: {BOOL}
+#        cost: {COST_NUMBER}
+#        method: {METHOD}
+#        timeout: {TIMEOUT}
+#        loss-percentage: {LOSS_NUMBER}
+#        whitelist: {WHITELIST}
+#
+#
+# For {CAUSE}, insert one of the following words (if seperated with / they are aliases and mean the same):
+#  - CONTACT
+#         when died from a cactus
+#  - FALL
+#         when died due to fall damage
+#  - FIRE
+#         when died of fire
+#  - FIRE_TICK
+#         when died because player was burning
+#  - LAVA
+#         when died in lava
+#  - DROWNING/WATER
+#         when died because player drowned in water
+#  - SUFFOCATION
+#         when died because player was stuck in a block
+#  - EXPLOSION/ENTITY_EXPLOSION
+#         when an explosion killed the player (for example TNT, Ghast's fireball)
+#         NOTE: this is not called at a creeper explosion! (see CREEPER-cause below)
+#  - VOID
+#        when player died in the void
+#  - PVP/PLAYER
+#        when player was killed by another player (pvp)
+#  - CREEPER
+#        when player was killed by a creeper
+#  - MOB/ENTITY
+#        when player was killed by a mob
+#  - UNKNOWN
+#        should never be called. don't use this
+#
+# NOTE: capitalization doesn't matter!
+#
+#
+# For {BOOL}, insert true or false
+#    DEFAULT: false
+#
+# For {COST_NUMBER}, insert any number to specify the cost; decimal numbers are allowed if your economy-plugin supports them
+#    DEFAULT: 0
+# NOTE: costs are ignored if the player has the permission deathcontrol.free
+#
+# For {METHOD}, insert either "auto" or "command"
+# (auto = player keeps his items automatically; command = player needs to type a command to get them back}
+#    DEFAULT: auto
+#
+# For {TIMEOUT}, insert a full number in seconds. When using "command"-method, the items will be dropped after the specified time at the death location
+# NOTE: Has no effect with "auto"-method
+# NOTE: Put -1 to have no timeout (not recommended).
+#    DEFAULT: 15
+#
+# For {LOSS_NUMBER}, insert a percentage of how many items will always be dropped on death for this cause
+# example: 25 will drop a quarter of the player's items and gives him the rest back
+#    DEFAULT: 0  (= player keeps every item)
+#
+#
+# For {WHITELIST}, insert a list of IDs of the items/blocks you want the player to keep. Everything that doesn't match will be dropped.
+# example-syntax:     whitelist: [276,277,278,279,50]
+#                 this would only keep diamond tools and torches
+#    by DEFAULT, every itemID will be kept
+#
+#
+# NOTE: When you don't define an option for a cause, the default one will be used.
+#
+#
+# Example:
+#
+#    PVP:
+#        keep-inventory: true
+#        cost: 300
+#        method: command
+#        timeout: 10
+#        loss-percentage: 12.5
+#        whitelist: [276,310,311,312,313]
+#
+#
+
+DeathCauses:
+    VOID:
+        keep-inventory: true
+    PVP:
+        keep-inventory: true
+        cost: 300
+        method: command
+        timeout: 10
+        loss-percentage: 12.5
+    LAVA:
+        keep-inventory: true
+        whitelist: [264]
