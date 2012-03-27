@@ -1,0 +1,7 @@
+# Documentation about how to set up this configuration can be found here:
+# http://dev.bukkit.org/server-mods/routeplanner/pages/configuration/
+
+triggerSelectionItem: 268
+useWorldEdit: false
+msg_followRoute: Following the route <routename>
+msg_finishRoute: You have finished this route.

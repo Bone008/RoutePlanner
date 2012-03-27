@@ -2,10 +2,10 @@ package bone008.routeplanner;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.logging.Level;
 
 import org.bukkit.World;
-import org.bukkit.util.config.ConfigurationNode;
+import org.bukkit.configuration.ConfigurationSection;
 
 public class Route {
 	private String name;
@@ -18,37 +18,39 @@ public class Route {
 	private boolean valid = false;
 
 	
-	public Route(RoutePlanner plugin, ConfigurationNode node) {
+	public Route(RoutePlanner plugin, ConfigurationSection sec) {
 		this.plugin = plugin;
 		try{
 			init(
-					node.getString("name"),
-					node.getString("introMessage"),
-					convertTriggers(node.getNodes("triggerRegions")),
-					node.getInt("targetTrigger",-1),
-					node.getString("creator",null)
+					sec.getString("name"),
+					sec.getString("introMessage"),
+					convertTriggers(sec.getConfigurationSection("triggerRegions")),
+					sec.getInt("targetTrigger",-1),
+					sec.getString("creator",null)
 			);
 			// set valid-flag to show the route was initialized
 			this.valid = true;
 		} catch(Exception e){
-			RoutePlanner.logger.severe(RoutePlanner.consolePrefix + e.getClass().getSimpleName() + " parsing route"+(name==null ? "":" "+name)+": "+e.getMessage());
+			plugin.log(e.getClass().getSimpleName() + " parsing route"+(name==null ? "":" "+name)+": "+e.getMessage(), true, Level.SEVERE);
+			e.printStackTrace();
 		}
 	}
 
 	
-	// called by constructor; parses the triggers defined in routes.yml
-	private ArrayList<TriggerRegion> convertTriggers(Map<String, ConfigurationNode> map) {
+	/**
+	 * called by constructor; parses the triggers defined in routes.yml
+	 */
+	private ArrayList<TriggerRegion> convertTriggers(ConfigurationSection regionsSec) {
 		ArrayList<TriggerRegion> ret = new ArrayList<TriggerRegion>();
-		ret.ensureCapacity(map.size());
 		
 		for(int i=0; true; i++){
-			ConfigurationNode currTrigger = map.get("r"+i);
+			ConfigurationSection currTrigger = regionsSec.getConfigurationSection("r"+i);
 			if(currTrigger == null)
 				break;
 			
 			World currWorld = plugin.getServer().getWorld(currTrigger.getString("world"));
-			List<Integer> pos1 = currTrigger.getIntList("pos1", null);
-			List<Integer> pos2 = currTrigger.getIntList("pos2", null);
+			List<Integer> pos1 = currTrigger.getIntegerList("pos1");
+			List<Integer> pos2 = currTrigger.getIntegerList("pos2");
 			String currMessage = currTrigger.getString("message");
 			
 			try{
@@ -76,7 +78,7 @@ public class Route {
 	
 	public void setName(String name) {
 		if(name == null || name.isEmpty())
-			throw new NullPointerException("name can't be null or empty!");
+			throw new IllegalArgumentException("name can't be null or empty!");
 		this.name = name;
 	}
 
@@ -87,7 +89,7 @@ public class Route {
 	
 	public void setIntroMessage(String introMessage) {
 		if(introMessage == null || introMessage.isEmpty())
-			throw new NullPointerException("introMessage can't be null or empty!");
+			throw new IllegalArgumentException("introMessage can't be null or empty!");
 		this.introMessage = introMessage;
 	}
 
@@ -97,7 +99,7 @@ public class Route {
 
 	public void setCreator(String creator) {
 		if(creator == null || creator.isEmpty())
-			throw new NullPointerException("creator can't be null or empty!");
+			throw new IllegalArgumentException("creator can't be null or empty!");
 		this.creator = creator;
 	}
 

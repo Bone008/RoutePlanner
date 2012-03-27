@@ -1,19 +1,17 @@
 package bone008.routeplanner;
 
-
-
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerMoveEvent;
 
-
-
-public class RoutePlayerListener extends PlayerListener{
+public class RoutePlayerListener implements Listener {
 	private final RoutePlanner plugin;
 	
 	public RoutePlayerListener(RoutePlanner instance){
@@ -21,7 +19,7 @@ public class RoutePlayerListener extends PlayerListener{
 	}
 	
 	
-	@Override
+	@EventHandler(priority = EventPriority.HIGH)
 	public void onPlayerInteract(PlayerInteractEvent event){
 		if(event.isCancelled()) return;
 		// check for signs
@@ -43,22 +41,22 @@ public class RoutePlayerListener extends PlayerListener{
 		if(event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_BLOCK){
 			Player player = event.getPlayer();
 			
-			
 			CreatingSession session;
 			if	(player.getItemInHand().getTypeId() == plugin.config.triggerSelectionItem &&
 				 (session = plugin.creatingSessions.get(player)) != null &&
-				 plugin.hasPermission(player, RoutePlanner.PERMISSON_ADMIN)){
+				 player.hasPermission(RoutePlanner.PERMISSON_ADMIN)){
 					int index = (event.getAction()==Action.LEFT_CLICK_BLOCK ? 0 : 1);
 					Block clickedBlock = event.getClickedBlock();
 					session.selection[index] = clickedBlock;
 					POutput.print(player,"Position "+(index+1)+" was set to "+clickedBlock.getX()+"/"+clickedBlock.getY()+"/"+clickedBlock.getZ()+"!");
+					event.setCancelled(true);
 			}
 		}
 	}
 	
 	
 	
-	@Override
+	@EventHandler
 	public void onPlayerMove(PlayerMoveEvent event){
 		if(plugin.routingSessions.get(event.getPlayer()) == null)
 			return;

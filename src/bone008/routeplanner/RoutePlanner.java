@@ -1,78 +1,76 @@
 package bone008.routeplanner;
 
-import java.io.*;
-import java.lang.reflect.Field;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
 import org.bukkit.block.Sign;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
-import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.config.Configuration;
-import com.nijiko.permissions.PermissionHandler;
-import com.nijikokun.bukkit.Permissions.Permissions;
+
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 
 public class RoutePlanner extends JavaPlugin{
-	static final Logger logger = Logger.getLogger("Minecraft");
+	public static final Logger logger = Logger.getLogger("Minecraft");
 	
-	static POutput playerOut;
-	static String consolePrefix;
-	
-	
-	private File routesFile = new File("plugins/RoutePlanner/routes.yml");
 	private final RoutePlayerListener playerListener = new RoutePlayerListener(this);
-	private final RouteBlockListener blockListener = new RouteBlockListener(/*this*/);
-
-	// yml-configuration
-	RouteConfiguration config;
-
-	PluginDescriptionFile pdfFile;
-	PermissionHandler permissionHandler;
-	WorldEditPlugin worldEdit;
-	HashMap<Player,CreatingSession> creatingSessions = new HashMap<Player,CreatingSession>();
-	HashMap<Player,RoutingSession> routingSessions = new HashMap<Player,RoutingSession>();
-	HashMap<String,Route> routes = new HashMap<String,Route>();
+	private final RouteBlockListener blockListener = new RouteBlockListener();
 	
-	Configuration routesConfig;
+
+	private FileConfiguration routesConfig;
+	
+	private File routesFile;
+	private String consolePrefix;
+	public PluginDescriptionFile pdfFile;
+	
+	public RouteConfiguration config;
+
+	public WorldEditPlugin worldEdit;
+	public HashMap<Player,CreatingSession> creatingSessions = new HashMap<Player,CreatingSession>();
+	public HashMap<Player,RoutingSession> routingSessions = new HashMap<Player,RoutingSession>();
+	public HashMap<String,Route> routes = new HashMap<String,Route>();
+	
 	
 	
 	
 	@Override
 	public void onLoad() {
+		routesFile = new File(getDataFolder(), "routes.yml");
 		pdfFile = getDescription();
 		consolePrefix = "["+pdfFile.getName()+"] ";
-		playerOut = new POutput(consolePrefix, ChatColor.GRAY);
+		POutput.init(consolePrefix, ChatColor.GRAY);
 	}
 	
 	@Override
 	public void onDisable() {
-		log("Plugin was disabled!");
+		log("is disabled!");
 	}
 	
 	
 	@Override
 	public void onEnable() {
-		getDataFolder().mkdirs();
+		getConfig().options().copyDefaults(true);
+		getConfig().options().copyHeader(true);
+		config = new RouteConfiguration(getConfig());
+		saveConfig();
 		
-		config = new RouteConfiguration(getConfiguration());
-		writeConfig();
-		
-		routesConfig = new Configuration(routesFile);
 		loadRoutes();
 		
 		PluginManager pManager = getServer().getPluginManager();
-		pManager.registerEvent(Event.Type.PLAYER_INTERACT, playerListener, Priority.Highest, this);
-		pManager.registerEvent(Event.Type.PLAYER_MOVE, playerListener, Priority.Normal, this);
-		pManager.registerEvent(Event.Type.SIGN_CHANGE, blockListener, Priority.Normal, this);
+		pManager.registerEvents(playerListener, this);
+		pManager.registerEvents(blockListener, this);
 
 		getCommand("route").setExecutor(new RoutePlannerCommand(this));
 		
@@ -80,46 +78,27 @@ public class RoutePlanner extends JavaPlugin{
 		Plugin worldEditPlugin = getServer().getPluginManager().getPlugin("WorldEdit");
 		if(worldEditPlugin != null && worldEditPlugin instanceof WorldEditPlugin){
 			this.worldEdit = (WorldEditPlugin) worldEditPlugin;
-			log("Successfully hooked into WorldEdit ...");
+			log("successfully hooked into WorldEdit.");
 		}
 		
-		String permVersion = setupPermissions();
-		
-		log("Version "+pdfFile.getVersion()+" is enabled using "+ (permVersion==null ? "the Op-System" : "Permissions "+permVersion) +"!");
+		log("version "+pdfFile.getVersion()+" is enabled!");
 	}
 	
 	
 	
-	private void writeConfig() {
-		if(!new File(getDataFolder().getPath()+File.separator+"config.yml").exists())
-			log("Creating config file ...");
-		// loop through fields of the RouteConfiguration-instance and write them into the yml
-		for(Field configEntry: RouteConfiguration.class.getFields()){
-			try {
-				getConfiguration().setProperty(configEntry.getName(), configEntry.get(config));
-			}
-			// only handle public stuff!
-			catch (IllegalArgumentException e) {}
-			catch (IllegalAccessException e) {}
-		}
+	public void loadRoutes(){
+		routesConfig = YamlConfiguration.loadConfiguration(routesFile);
+		routes.clear();
 		
-		getConfiguration().save();
-	}
-	
-	
-	
-	void loadRoutes(){
-		routesConfig.load();
-		
-		List<String> routesList = routesConfig.getKeys("routes");
+		ConfigurationSection routesSec = routesConfig.getConfigurationSection("routes");
 		// if no route was created yet
-		if(routesList == null) return;
+		if(routesSec == null) return;
+		Set<String> routesSet = routesSec.getKeys(false);
 		int errorCounter = 0;
 		
-		routes.clear();
-		for(String routeKey: routesList){
+		for(String routeKey: routesSet){
 			// converting happens in Route-class
-			Route currRoute = new Route(this, routesConfig.getNode("routes."+routeKey));
+			Route currRoute = new Route(this, routesSec.getConfigurationSection(routeKey));
 			if(currRoute.isValid())
 				routes.put(routeKey.toLowerCase(), currRoute);
 			else
@@ -138,42 +117,52 @@ public class RoutePlanner extends JavaPlugin{
 		if(!session.isComplete())
 			throw new IllegalArgumentException("incomplete session");
 		
+		ConfigurationSection routesSec = routesConfig.getConfigurationSection("routes");
+		if(routesSec == null)
+			routesSec = routesConfig.createSection("routes");
+		
+		ConfigurationSection rootSec = routesSec.createSection(session.getName());
+
 		String creator = player.getName();
-		String root = "routes."+session.getName();
+
+		rootSec.set("name", session.getName());
+		rootSec.set("creator", creator);
+		rootSec.set("introMessage", session.getIntroMessage());
+		rootSec.set("targetTrigger", session.getTargetTriggerNum());
 		
-		// reset property if already exists (editing process)
-		if(routesConfig.getProperty(root) != null){
-			routesConfig.removeProperty(root);
-		}
-		
-		routesConfig.setProperty(root+".name", session.getName());
-		routesConfig.setProperty(root+".creator", creator);
-		routesConfig.setProperty(root+".introMessage", session.getIntroMessage());
-		routesConfig.setProperty(root+".targetTrigger", session.getTargetTriggerNum());
-		
-		String trRoot = root+".triggerRegions";
+		ConfigurationSection triggerSec = rootSec.createSection("triggerRegions");
 		List<TriggerRegion> allTriggers = session.getTriggers();
 		for(int i=0; i < allTriggers.size(); i++){
-			String rRoot = trRoot+".r"+i;
-			String worldName = allTriggers.get(i).getWorld().getName();
-			BlockPosition pos1 = allTriggers.get(i).getPos1();
-			BlockPosition pos2 = allTriggers.get(i).getPos2();
-			String triggerMessage = allTriggers.get(i).getTriggerMessage();
-
-			routesConfig.setProperty(rRoot+".world", worldName);
-			routesConfig.setProperty(rRoot+".pos1", pos1.getList());
-			routesConfig.setProperty(rRoot+".pos2", pos2.getList());
-			routesConfig.setProperty(rRoot+".message", triggerMessage);
+			TriggerRegion currTrigger = allTriggers.get(i);
+			String worldName = currTrigger.getWorld().getName();
+			BlockPosition pos1 = currTrigger.getPos1();
+			BlockPosition pos2 = currTrigger.getPos2();
+			String triggerMessage = currTrigger.getTriggerMessage();
+			
+			ConfigurationSection currTriggerSec = triggerSec.createSection("r"+i);
+			currTriggerSec.set("world", worldName);
+			currTriggerSec.set("pos1", pos1.getList());
+			currTriggerSec.set("pos2", pos2.getList());
+			currTriggerSec.set("message", triggerMessage);
 		}
 		
-		return routesConfig.save();
+		return saveFileConfiguration(routesConfig, routesFile);
 	}
 	
-	boolean removeRoute(String routeName){
-		routesConfig.removeProperty("routes."+routeName);
-		return routesConfig.save();
+	public boolean removeRoute(String routeName){
+		routesConfig.set("routes."+routeName, null);
+		return saveFileConfiguration(routesConfig, routesFile);
 	}
 	
+	
+	private boolean saveFileConfiguration(FileConfiguration cfg, File file){
+		try {
+			cfg.save(file);
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
 
 	
 	public Route getRoute(String name){
@@ -243,68 +232,31 @@ public class RoutePlanner extends JavaPlugin{
 		"Usage: /route settarget <trigger-id>"};
 	
 	
-	// not static!
-	public final String[] HELP = {
-		
-	};
-	
-	
-	static final String PERMISSON_BASIC = "routeplanner.use";
-	static final String PERMISSON_ADMIN = "routeplanner.admin";
-	static final String PERMISSON_ALTEROTHER = "routeplanner.alterother";
+	public static final String PERMISSON_BASIC = "routeplanner.use";
+	public static final String PERMISSON_ADMIN = "routeplanner.admin";
+	public static final String PERMISSON_ALTEROTHER = "routeplanner.alterother";
 
-	static final String ERROR_ALREADY_RUNNING = "You are already following a route!";
-	static final String ERROR_ALREADY_CREATING = "You are already creating a new route!";
-	static final String ERROR_ALREADY_EXISTS = "There already exists a route with that name!";
-	static final String ERROR_NOT_EXISTS = "There is no route with that name!";
-	static final String ERROR_NOT_RUNNING = "You are not running a route!";
-	static final String ERROR_NOT_CREATING = "You are not in a creating process of a route!";
-	static final String ERROR_NO_SELECTION = "You have to select a region at first!";
-	static final String ERROR_INVALID_SELECTION = "Your selected points aren't in the same world!";
-	static final String ERROR_TRIGGER_NOT_FOUND = "There is no trigger with that ID!";
-	static final String ERROR_NO_PERMISSION_ALTEROTHER = "You don't have permission to alter routes created by someone else!";
-
-
+	public static final String ERROR_ALREADY_RUNNING = "You are already following a route!";
+	public static final String ERROR_ALREADY_CREATING = "You are already creating a new route!";
+	public static final String ERROR_ALREADY_EXISTS = "There already exists a route with that name!";
+	public static final String ERROR_NOT_EXISTS = "There is no route with that name!";
+	public static final String ERROR_NOT_RUNNING = "You are not running a route!";
+	public static final String ERROR_NOT_CREATING = "You are not in a creating process of a route!";
+	public static final String ERROR_NO_SELECTION = "You have to select a region at first!";
+	public static final String ERROR_INVALID_SELECTION = "Your selected points aren't in the same world!";
+	public static final String ERROR_TRIGGER_NOT_FOUND = "There is no trigger with that ID!";
+	public static final String ERROR_NO_PERMISSION_ALTEROTHER = "You don't have permission to alter routes created by someone else!";
 	
-	
-	
-	
-	/**
-	 * Hooks into Permissions
-	 * 
-	 * @return String version of Permissions-Plugin
-	 */
-	private String setupPermissions(){
-		Plugin permissionsPlugin = this.getServer().getPluginManager().getPlugin("Permissions");
-		
-
-		if (permissionHandler == null) {
-			if (permissionsPlugin != null) {
-				permissionHandler = ((Permissions) permissionsPlugin).getHandler();
-				return permissionsPlugin.getDescription().getVersion();
-			}
-			return null;
-		}
-		return null;
-	}
-	
-	boolean hasPermission(Player player, String perm){
-		if(permissionHandler == null){
-			if(perm.contains("admin") && !player.isOp())
-				return false;
-			return true;
-		}
-		else{
-			return permissionHandler.has(player, perm);
-		}
-	}
 	
 	// logs a message to console
-	void log(String msg, boolean usePrefix){
-		logger.info( (usePrefix==true ? consolePrefix : "") + msg );
+	public void log(String msg, boolean usePrefix, Level lvl){
+		logger.log(lvl, (usePrefix==true ? consolePrefix : "") + msg );
 	}
-	void log(String msg){
-		this.log(msg,true);
+	public void log(String msg, boolean usePrefix){
+		log(msg, usePrefix, Level.INFO);
+	}
+	public void log(String msg){
+		log(msg, true);
 	}
 	
 }

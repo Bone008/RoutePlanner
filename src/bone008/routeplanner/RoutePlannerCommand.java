@@ -30,7 +30,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 		
 				
 		
-		if(plugin.hasPermission(player, RoutePlanner.PERMISSON_ADMIN)){
+		if(player.hasPermission(RoutePlanner.PERMISSON_ADMIN)){
 			
 			// route create <routename>
 			if(split[0].equalsIgnoreCase("create"))
@@ -76,7 +76,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 
 		
 		
-		if(plugin.hasPermission(player, RoutePlanner.PERMISSON_BASIC)){
+		if(player.hasPermission(RoutePlanner.PERMISSON_BASIC)){
 			
 			// route list
 			if(split[0].equalsIgnoreCase("list"))
@@ -95,7 +95,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 			
 			// ======== default user starting a new route ============
 			
-			if(!plugin.hasPermission(player, RoutePlanner.PERMISSON_BASIC))
+			if(!player.hasPermission(RoutePlanner.PERMISSON_BASIC))
 				return true;
 			if(plugin.routingSessions.get(player) != null){
 				POutput.printError(player, RoutePlanner.ERROR_ALREADY_RUNNING);
@@ -135,7 +135,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 		};
 		POutput.print(player, helpList, false);
 		
-		if(plugin.hasPermission(player, RoutePlanner.PERMISSON_ADMIN)){
+		if(player.hasPermission(RoutePlanner.PERMISSON_ADMIN)){
 			String[] adminHelp = {
 				ChatColor.GRAY+"-- Admin Commands --",
 				c("/rp create <routename>")+" starts the creation of a new route",
@@ -210,7 +210,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 		}
 		
 		// check if player is allowed to alter the route
-		if(!plugin.hasPermission(player, RoutePlanner.PERMISSON_ALTEROTHER) && !route2edit.getCreator().equals(player.getName())){
+		if(!player.hasPermission(RoutePlanner.PERMISSON_ALTEROTHER) && !route2edit.getCreator().equals(player.getName())){
 			POutput.printError(player, RoutePlanner.ERROR_NO_PERMISSION_ALTEROTHER);
 			return true;
 		}
@@ -266,7 +266,7 @@ public class RoutePlannerCommand implements CommandExecutor{
 			return true;
 		}
 		
-		if(!plugin.hasPermission(player, RoutePlanner.PERMISSON_ALTEROTHER) && !route2remove.getCreator().equals(player.getName())){
+		if(!player.hasPermission(RoutePlanner.PERMISSON_ALTEROTHER) && !route2remove.getCreator().equals(player.getName())){
 			POutput.printError(player, RoutePlanner.ERROR_NO_PERMISSION_ALTEROTHER);
 			return true;
 		}

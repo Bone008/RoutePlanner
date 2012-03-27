@@ -1,11 +1,21 @@
 name: RoutePlanner
 main: bone008.routeplanner.RoutePlanner
-version: 1.1
+version: 1.3
 author: Bone008
+softdepend: [WorldEdit]
 
 commands:
     route:
-        usage:
-            RoutePlanner version 1.1 by Bone008
-            Type /<command> help for more information!
+        usage: RoutePlanner version 1.3 by Bone008. Use /<command> help for more information!
         aliases: rp
+
+permissions:
+    routeplanner.use:
+        default: op
+        description: Allows following and listing available routes.
+    routeplanner.admin:
+        default: op
+        description: Allows creating and modifying routes.
+    routeplanner.alterother:
+        default: op
+        description: Allows altering routes that were created by someone else.

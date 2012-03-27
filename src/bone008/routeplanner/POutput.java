@@ -3,25 +3,16 @@ package bone008.routeplanner;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-class POutput {
-	private static POutput instance;
-	private final String prefix;
+public class POutput {
+	private static String prefix;
 	
-	public POutput(String prefix, ChatColor color){
-		this.prefix = color+prefix;
-		instance = this;
+	public static void init(String pre, ChatColor color){
+		prefix = color+pre;
 	}
 	
-	
-	private void displayMessage(Player player, String[] msg, boolean usePrefix){
-		for(String ln: msg){
-			String rln = (usePrefix ? prefix : "") + ChatColor.WHITE + ln;
-			player.sendMessage(rln);
-		}
+	private POutput(String prefix, ChatColor color){
 	}
 	
-
-
 	public static void print(Player player, String msg){
 		String[] multiline = new String[1];
 		multiline[0] = msg;
@@ -36,7 +27,10 @@ class POutput {
 		print(player, msg, true);
 	}
 	public static void print(Player player, String[] msg, boolean usePrefix){
-		instance.displayMessage(player, msg, usePrefix);
+		for(String ln: msg){
+			String rln = (usePrefix ? prefix : "") + ChatColor.WHITE + ln;
+			player.sendMessage(rln);
+		}
 	}
 	
 	public static void printUsage(Player player, String msg){
